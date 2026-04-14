@@ -1,7 +1,6 @@
 const express = require('express');
 const app = express();
 
-// Serve pro servidor não ficar "cego" e conseguir ler o JSON (Aula 4)
 app.use(express.json());
 
 // Lista dos 10 filmes
@@ -20,12 +19,23 @@ let filmes = [
 
 let proximoId = 11;
 
-// Rota GET Listar tudo (Aula 3)
+//  Rota para listar TODOS os filmes 
 app.get('/api/filmes', (req, res) => {
     res.json(filmes);
 });
 
-// Rota POST Criar novo filme com as travas da Aula 4
+//  Rota para buscar UM filme específico pelo ID
+app.get('/api/filmes/:id', (req, res) => {
+    const { id } = req.params;
+    const filme = filmes.find(f => f.id === parseInt(id));
+
+    if (!filme) {
+        return res.status(404).json({ erro: "Filme não encontrado!" });
+    }
+
+    res.json(filme);
+});
+// Rota POST Criar novo filme 
 app.post('/api/filmes', (req, res) => {
     const { titulo, diretor, nota, genero } = req.body;
 
@@ -45,6 +55,47 @@ app.post('/api/filmes', (req, res) => {
     
     // Sucesso: 201 Created
     res.status(201).json(novoFilme);
+});
+app.put('/api/filmes/:id', (req, res) => {
+    const idParaBuscar = parseInt(req.params.id); // Transforma o ID da URL em número
+    const { titulo, diretor, nota, genero } = req.body;
+
+    const filme = filmes.find(f => f.id === idParaBuscar);
+
+    if (!filme) {
+        return res.status(404).json({ erro: "Filme não encontrado!" });
+    }
+
+    // Se as validações de campo estiverem barrando, veja se escreveu os nomes certos no Postman
+    if (!titulo || !diretor || nota === undefined || !genero) {
+        return res.status(400).json({ erro: "Dados incompletos!" });
+    }
+
+    filme.titulo = titulo;
+    filme.diretor = diretor;
+    filme.nota = nota;
+    filme.genero = genero;
+
+    res.json(filme);
+});
+    
+// Rota DELETE Remover filme (CRUD completo)
+app.delete('/api/filmes/:id', (req, res) => {
+    const { id } = req.params;
+    
+    // Acha a posição do filme na lista
+    const index = filmes.findIndex(f => f.id === parseInt(id));
+
+    // Se o index for -1, o filme não existe
+    if (index === -1) {
+        return res.status(404).json({ erro: "Esse filme nem existe para apagar!" });
+    }
+
+    // Tira o filme da lista
+    filmes.splice(index, 1);
+
+    // Sucesso sem conteúdo: 204 No Content
+    res.status(204).send();
 });
 
 app.listen(3001, () => {
